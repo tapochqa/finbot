@@ -1,0 +1,127 @@
+(ns finbot.handling
+  (:require
+    [tg-bot-api.telegram :as telegram]
+    [clojure.string :as str]
+    [finbot.sql :as sql]
+    [hashids.core :as hashids]))
+
+
+(defn inline-keyboard
+  [{message-id :message_id}]
+  [[{:text "⨯"
+     :callback_data message-id}]])
+
+
+(defn the-handler 
+  "Bot logic here"
+  [config {:keys [message callback_query]} trigger-id]
+  
+  (let [ds
+        (sql/jdbc-mysql config)]
+    
+    
+    (cond
+      (and (:text message)
+           (= (:text message) "/start"))
+      (telegram/send-message 
+        config
+        (-> message :chat :id)
+        "Присылайте траты. Формат указан в описании бота."
+        {:reply-markup
+         {
+          :keyboard
+          [[{:text "Дашборд"
+             :web_app {:url (format 
+                              "https://datalens.yandex/4anikzd90wr2t?chat_id_hash=%s"
+                              (hashids/encode
+                                {:salt (:creds config)}
+                                (-> message :chat :id)))}}]]}})
+      
+      (some? (:text message))
+      (let [timestamp
+              (System/currentTimeMillis)
+              
+              text
+              (:text message)
+              
+              words
+              (str/split text #" ")
+              
+              amount
+              (first words)
+              
+              agent
+              (reduce
+                (fn [x y] (format "%s %s" x y))
+                (rest words))
+              
+              amount
+              (if 
+                (= (first amount) \+)
+                (parse-double amount)
+                (- (parse-double amount)))]
+        
+        (sql/insert-row! ds config
+          {:chat-id (-> message :chat :id)
+           :message-id (:message_id message)
+           :timestamp timestamp 
+           :agent agent
+           :amount amount})
+        
+          
+        (when 
+          (< amount 0)
+          (telegram/send-message
+            config
+            (-> message :chat :id)
+            (format "%s ₽: %s\n\n%.0f ₽ с начала месяца,\n%.0f ₽ из них — %s" 
+              amount
+              agent
+              (sql/gross-of-month ds
+                {:chat-id (-> message :chat :id)
+                 :timestamp timestamp})
+              (-
+                (sql/gross-of-month-by-agent ds
+                  {:chat-id (-> message :chat :id)
+                   :timestamp timestamp
+                   :agent agent}))
+              agent
+              nil)
+            {:reply-markup
+             {:inline_keyboard
+              (inline-keyboard message)}}))
+          (when 
+            (> amount 0)
+            (telegram/send-message
+              config
+              (-> message :chat :id)
+              (format "+ %s ₽: %s"
+                amount
+                agent)
+              {:reply-markup
+               {:inline_keyboard
+                (inline-keyboard message)}})))
+      
+      (some? callback_query)
+      (let [callback-message  (:message callback_query)
+            callback-data     (parse-long (:data callback_query))
+            cb-message-id     (:message_id callback-message)]
+        
+        (sql/delete-row! ds
+          {:chat-id (-> callback-message :chat :id)
+           :message-id callback-data})
+        (telegram/edit-message-text
+          config
+          (-> callback-message :chat :id)
+          (-> callback-message :message_id)
+          "Удалено"
+          {:parse-mode "markdown"})))))
+
+
+(comment
+  (hashids/encode
+    {:salt (slurp "creds")}
+    475396835)
+  (parse-double "+150")
+  (reduce str (rest (str/split "+150 варя шалина" #" ")))
+  )
