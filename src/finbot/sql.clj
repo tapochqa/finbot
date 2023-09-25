@@ -108,6 +108,22 @@
     first first second))
 
 
+(defn top-4
+  [ds {:keys [chat-id]}]
+  (jdbc/execute! ds
+    ["SELECT `agent`, `amount`, COUNT(*) AS `times` 
+      FROM `telegram`.`finbot`
+      WHERE `chat_id` = ? 
+        AND `timestamp` > ?
+        AND `active` = 1
+        AND `amount` < 0
+      GROUP BY `agent`, `amount`
+      ORDER BY `times` DESC 
+      LIMIT 4;"
+     chat-id
+     (- (System/currentTimeMillis) 2592000000)]))
+
+
 (comment 
   
   
@@ -119,6 +135,17 @@
   (def 
     FDS
     (jdbc-mysql CONFIG))
+  
+  (->>
+    (top-4 FDS {:chat-id 5362409023})
+    (map (fn [x] {:text (format "%s %s"
+                          (- (:finbot/amount x))
+                          (:finbot/agent x))}))
+    (partition 2)
+    (map vec)
+    vec)
+  
+  (into [[1 2][3 4]][[5]])
   
   (gross-of-month FDS 
     {:chat-id 163440129})

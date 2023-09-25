@@ -54,7 +54,9 @@ zip:
 bash-package: build-binary-docker zip
 
 run-test:
-	lein compile && lein install && lein run $(token) $(creds)
+	lein compile && lein install && lein run \
+	"$(shell cat token)" \
+	"$(shell cat creds)"
 
 upload-version:
 	aws --endpoint-url=https://storage.yandexcloud.net/ \

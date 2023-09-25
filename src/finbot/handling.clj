@@ -12,6 +12,25 @@
      :callback_data message-id}]])
 
 
+(defn keyboard
+  [config ds message]
+  (into 
+    (->>
+      (sql/top-4 ds {:chat-id (-> message :chat :id)})
+      (map (fn [x] {:text (format "%s %s"
+                            (- (:finbot/amount x))
+                            (:finbot/agent x))}))
+      (partition 2)
+      (map vec)
+      vec)
+    [[{:text "Дашборд"
+       :web_app {:url (format 
+                        "https://datalens.yandex/4anikzd90wr2t?chat_id_hash=%s"
+                        (hashids/encode
+                          {:salt (:creds config)}
+                          (-> message :chat :id)))}}]]))
+
+
 (defn the-handler 
   "Bot logic here"
   [config {:keys [message callback_query]} trigger-id]
@@ -26,16 +45,11 @@
       (telegram/send-message 
         config
         (-> message :chat :id)
-        "Присылайте траты. Формат указан в описании бота."
+        "Присылайте траты и доходы. Формат указан в описании бота."
         {:reply-markup
          {
           :keyboard
-          [[{:text "Дашборд"
-             :web_app {:url (format 
-                              "https://datalens.yandex/4anikzd90wr2t?chat_id_hash=%s"
-                              (hashids/encode
-                                {:salt (:creds config)}
-                                (-> message :chat :id)))}}]]}})
+          (keyboard config ds message)}})
       
       (some? (:text message))
       (let [timestamp
@@ -67,6 +81,13 @@
            :timestamp timestamp 
            :agent agent
            :amount amount})
+        
+        (telegram/send-message
+          config
+          (-> message :chat :id)
+          "ок"
+          {:reply-markup
+           {:keyboard (keyboard config ds message)}})
         
           
         (when 
