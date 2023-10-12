@@ -6,6 +6,14 @@
     [hashids.core :as hashids]))
 
 
+(def REGEXPS
+  {:transaction
+   #"\+?([-.0-9]+) ([^\n]+)"
+   
+   :category
+   #"(.*) [-—] (.*)"})
+
+
 (defn inline-keyboard
   [{message-id :message_id}]
   [[{:text "⨯"
@@ -31,6 +39,16 @@
                           (-> message :chat :id)))}}]]))
 
 
+(defn ok
+  [config ds message]
+  (telegram/send-message
+    config
+    (-> message :chat :id)
+    "ок"
+    {:reply-markup
+     {:keyboard (keyboard config ds message)}}))
+
+
 (defn the-handler 
   "Bot logic here"
   [config {:keys [message callback_query]} trigger-id]
@@ -51,7 +69,8 @@
           :keyboard
           (keyboard config ds message)}})
       
-      (some? (:text message))
+      (re-matches (:transaction REGEXPS) 
+                  (str (:text message)))
       (let [timestamp
               (System/currentTimeMillis)
               
@@ -82,13 +101,9 @@
            :agent agent
            :amount amount})
         
-        (telegram/send-message
-          config
-          (-> message :chat :id)
-          "ок"
-          {:reply-markup
-           {:keyboard (keyboard config ds message)}})
         
+        
+        (ok config ds message)
           
         (when 
           (< amount 0)
@@ -123,6 +138,25 @@
                {:inline_keyboard
                 (inline-keyboard message)}})))
       
+      
+      (re-matches (:category REGEXPS)
+                  (str (:text message)))
+      (let [match
+            (re-matches (:category REGEXPS)
+                  (str (:text message)))
+            
+            agent
+            (second match)
+            
+            category
+            (nth match 2)]
+        
+        (sql/set-category! ds {:agent agent 
+                               :category category
+                               :chat-id (-> message :chat :id)})
+        (ok config ds message))
+      
+      
       (some? callback_query)
       (let [callback-message  (:message callback_query)
             callback-data     (parse-long (:data callback_query))
@@ -140,6 +174,12 @@
 
 
 (comment
+  
+  (nth [0 1 2] 2)
+  
+  (re-matches #"(.*) - (.*)" "кофе - рестораны")
+  (re-matches #"\+?([-.0-9]+) ([^\n]+)" "+100")
+  
   (hashids/encode
     {:salt (slurp "creds")}
     475396835)

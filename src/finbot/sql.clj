@@ -25,34 +25,75 @@
        :password pass})))
 
 
+(defn get-category
+  "Get agent's category from the last record"
+  [ds {:keys [agent chat-id]}]
+  (->
+    (jdbc/execute! ds
+      ["SELECT category FROM telegram.finbot
+        WHERE (agent=?
+               AND chat_id=?)
+        ORDER BY timestamp DESC
+        LIMIT 1" 
+       agent
+       chat-id])
+    first
+    :finbot/category))
+
+
+(defn set-category!
+  "Populate all agent's records with category"
+  [ds {:keys [chat-id
+              agent
+              category]}]
+  (jdbc/execute! ds
+    ["UPDATE telegram.finbot
+      set category=?
+      where (agent=?
+             AND chat_id=?)"
+     category
+     agent
+     chat-id]))
+
+
 (defn insert-row!
   [ds
    config
    {:keys [chat-id  
+           message-id
+           timestamp
+           agent
+           amount]
+    :as params}]
+  
+  (let [category
+        (get-category ds params)]
+  
+    (jdbc/execute! ds 
+             ["INSERT INTO `telegram`.`finbot`
+               (`chat_id`,
+                `chat_id_hash`,
+                `message_id`,
+                `timestamp`,
+                `agent`,
+                `amount`,
+                `active`,
+                `category`)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+              chat-id
+              (hashids/encode
+                {:salt (:creds config)}
+                chat-id)
               message-id
               timestamp
               agent
-              amount]}]
-
-  (jdbc/execute! ds 
-           ["INSERT INTO `telegram`.`finbot`
-             (`chat_id`,
-              `chat_id_hash`,
-              `message_id`,
-              `timestamp`,
-              `agent`,
-              `amount`,
-              `active`)
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
-            chat-id
-            (hashids/encode
-              {:salt (:creds config)}
-              chat-id)
-            message-id
-            timestamp
-            agent
-            amount
-            true]))
+              amount
+              true
+              (if (nil? category)
+                  (do 
+                    (set-category! ds (assoc params :category "другое"))
+                    "другое")
+                  category)])))
 
 
 (defn get-row
@@ -108,6 +149,22 @@
     first first second))
 
 
+(defn gross-of-month-by-category
+  [ds {:keys [chat-id category timestamp]}]
+  (->
+    (jdbc/execute! ds
+      ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
+        WHERE (`chat_id`) = ?
+        AND (`timestamp`) > ?
+        AND (`category`) = ?
+        AND (`amount`) < 0
+        AND (`active`) = 1"
+       chat-id
+       (time/start-of-month timestamp)
+       agent])
+    first first second))
+
+
 (defn top-4
   [ds {:keys [chat-id]}]
   (jdbc/execute! ds
@@ -124,8 +181,13 @@
      (- (System/currentTimeMillis) 2592000000)]))
 
 
+
+
+
 (comment 
   
+  
+  (get-category FDS "магнит")
   
   
   
@@ -146,6 +208,8 @@
     vec)
   
   (into [[1 2][3 4]][[5]])
+  
+  
   
   (gross-of-month FDS 
     {:chat-id 163440129})
