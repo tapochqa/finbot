@@ -1,5 +1,5 @@
 (ns finbot.sql
-  (:require 
+llllll-/;cx[  (:require 
     [finbot.time :as time]
     
     [next.jdbc :as jdbc]
@@ -206,27 +206,19 @@
      (- (System/currentTimeMillis) 2592000000)]))
 
 
-(defn deactivate-duplicates
+(defn delete-duplicates
   [ds]
   (jdbc/execute! ds
-    ["update `telegram`.`finbot`
-        set active = ?
-        where timestamp in
-        (
-          select timestamp from
-          (
-            select timestamp, RN from
-            (
-                SELECT timestamp, ROW_NUMBER() 
-                OVER (PARTITION BY chat_id, message_id 
-                  ORDER BY chat_id, message_id) 
-                AS RN 
-                FROM `telegram`.`finbot`
-                as t1
-            ) as t2 where RN > 1
-          ) as t3
-        )
-      " 0]))
+    ["WITH CTE AS
+      (
+      SELECT *,ROW_NUMBER() 
+      OVER (PARTITION BY chat_id, message_id 
+            ORDER BY chat_id, message_id) 
+      AS RN 
+      FROM `telegram`.`finbot_test`
+      )
+      DELETE FROM CTE WHERE RN<>1
+      "]))
 
 
 

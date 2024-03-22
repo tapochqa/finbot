@@ -94,6 +94,8 @@
                 (parse-double amount)
                 (- (parse-double amount)))]
         
+        (sql/deactivate-duplicates ds)
+
         (sql/insert-row! ds config
           {:chat-id (-> message :chat :id)
            :message-id (:message_id message)
@@ -102,17 +104,28 @@
            :amount amount})
         
         
-        
         (ok config ds message)
           
         (when 
-		  (= amount 0)
-		  #_(telegram/send-message
+		  (= amount 0.0)
+		  (telegram/send-message
 		  	config
 		  	(-> message :chat :id)
-		  	()
-		  	)
+		  	(format "%s: %s с начала месяца"
+		  		agent
+		  		(sql/gross-of-month-by-range
+		  			ds
+		  			{:chat-id (-> message :chat :id)
+		  			 :agent agent
+		  			 :min-amount 0
+		  			 :max-amount 0
+		  			 :timestamp timestamp}))
+		  	{:reply-markup
+             {:inline_keyboard
+              (inline-keyboard message)}}
+		  	))
 
+        (when
           (< amount 0)
           (telegram/send-message
             config
@@ -133,6 +146,7 @@
             {:reply-markup
              {:inline_keyboard
               (inline-keyboard message)}}))
+
           (when 
             (> amount 0)
             (telegram/send-message
