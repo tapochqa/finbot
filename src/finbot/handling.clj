@@ -106,6 +106,13 @@
         (ok config ds message)
           
         (when 
+		  (= amount 0)
+		  #_(telegram/send-message
+		  	config
+		  	(-> message :chat :id)
+		  	()
+		  	)
+
           (< amount 0)
           (telegram/send-message
             config

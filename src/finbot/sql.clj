@@ -165,6 +165,31 @@
     first first second))
 
 
+(defn gross-of-month-by-range
+  [ds {:keys [chat-id agent min-amount max-amount timestamp]}]
+  (some->
+    (jdbc/execute! ds
+      ["SELECT COUNT(*) FROM `telegram`.`finbot`
+        WHERE (`chat_id`) = ?
+        AND (`agent`) = ?
+        AND (`amount`) >= ?
+        AND (`amount`) <= ?
+        AND (`timestamp`) > ?
+        AND (`active`) = 1"
+       chat-id
+       agent
+       min-amount
+       max-amount
+       (time/start-of-month timestamp)])
+    first 
+    first 
+    second
+    int)
+
+
+  )
+
+
 (defn top-4
   [ds {:keys [chat-id]}]
   (jdbc/execute! ds
@@ -173,7 +198,7 @@
       WHERE `chat_id` = ? 
         AND `timestamp` > ?
         AND `active` = 1
-        AND `amount` < 0
+        AND `amount` <= 0
       GROUP BY `agent`, `amount`
       ORDER BY `times` DESC 
       LIMIT 4;"
@@ -181,6 +206,19 @@
      (- (System/currentTimeMillis) 2592000000)]))
 
 
+(defn delete-duplicates
+  [ds]
+  (jdbc/execute! ds
+    ["WITH CTE AS
+      (
+      SELECT *,ROW_NUMBER() 
+      OVER (PARTITION BY chat_id, message_id 
+            ORDER BY chat_id, message_id) 
+      AS RN 
+      FROM `telegram`.`finbot_test`
+      )
+      DELETE FROM CTE WHERE RN<>1
+      "]))
 
 
 
@@ -189,7 +227,7 @@
   
   (get-category FDS "магнит")
   
-  
+  (deactivate-duplicates FDS)
   
   
   (def CONFIG {:creds (slurp "creds")
@@ -208,11 +246,22 @@
     vec)
   
   (into [[1 2][3 4]][[5]])
+
   
   
+  
+  (do
+   (gross-of-month-by-range
+    FDS
+    {:chat-id 163440129
+     :agent "автобус"
+     :min-amount 0
+     :max-amount 0
+     :timestamp (System/currentTimeMillis)}))
   
   (gross-of-month FDS 
-    {:chat-id 163440129})
+    {:chat-id 163440129
+     :timestamp 0})
   (gross-of-month-by-agent FDS 
     {:chat-id 163440129
      :agent "Пятерочка"}
