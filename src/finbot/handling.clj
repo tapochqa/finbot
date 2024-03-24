@@ -124,23 +124,28 @@
              {:inline_keyboard
               (inline-keyboard message)}}
 		  	))
-
+        
+        
+        
+        
         (when
           (< amount 0)
           (telegram/send-message
             config
             (-> message :chat :id)
-            (format "%s ₽: %s\n\n%.0f ₽ с начала месяца,\n%.0f ₽ из них — %s" 
+            (format "%s ₽: %s\n\n%,d ₽ с начала месяца,\n%,d ₽ из них — %s" 
               amount
               agent
-              (sql/gross-of-month ds
-                {:chat-id (-> message :chat :id)
-                 :timestamp timestamp})
-              (-
-                (sql/gross-of-month-by-agent ds
-                  {:chat-id (-> message :chat :id)
-                   :timestamp timestamp
-                   :agent agent}))
+              (long 
+	              (sql/gross-of-month ds
+	                {:chat-id (-> message :chat :id)
+	                 :timestamp timestamp}))
+              (long 
+	              (-
+	                (sql/gross-of-month-by-agent ds
+	                  {:chat-id (-> message :chat :id)
+	                   :timestamp timestamp
+	                   :agent agent})))
               agent
               nil)
             {:reply-markup
@@ -196,11 +201,14 @@
 
 (comment
   
+  (format "%,d" (long 12454))
+          
+  
   (nth [0 1 2] 2)
   
   (re-matches #"(.*) - (.*)" "кофе - рестораны")
   (re-matches #"\+?([-.0-9]+) ([^\n]+)" "+100")
-  
+  (long 1.23)
   (hashids/encode
     {:salt (slurp "creds")}
     475396835)

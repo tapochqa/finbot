@@ -23,8 +23,8 @@
           :polling {:update-timeout 1000}
           :creds creds
           }]
-  #_(polling/run-polling config)
-  (lambda config)))
+  (polling/run-polling config)
+  #_(lambda config)))
 
 
 (comment
