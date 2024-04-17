@@ -135,7 +135,7 @@
         AND (`active`) = 1
         "
        chat-id
-       ])
+       fn])
     first first second))
 
 
@@ -340,13 +340,13 @@
      :max-amount 0
      :timestamp (System/currentTimeMillis)}))
   
-  (gross-of-month FDS 
+  (gross-of-year FDS
     {:chat-id 163440129
-     :timestamp 0})
-  (gross-of-month-by-category FDS
+     :timestamp (System/currentTimeMillis)})
+  (gross-of-year-by-agent FDS
     {:chat-id 163440129
-     :agent "Пятерочка"}
-    )
+     :agent "пятерочка"
+     :timestamp (System/currentTimeMillis)})
   
   (insert-row! FDS 
     {:chat-id 3

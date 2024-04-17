@@ -25,7 +25,42 @@
   (start-of unix :first-day-of-year))
 
 
+(defn which-month
+  [unix]
+  (case
+    (-> unix
+      java-time/instant
+      (java-time/local-date "UTC")
+      str
+      (subs 5 7)
+      parse-long)
+
+    1 "январе"
+    2 "феврале"
+    3 "марте"
+    4 "апреле"
+    5 "мае"
+    6 "июне"
+    7 "июле"
+    8 "августе"
+    9 "сентябре"
+    10 "октябре"
+    11 "ноябре"
+    12 "декабре"))
+
+
+(defn which-year
+  [unix]
+  (-> unix
+      java-time/instant
+      (java-time/local-date "UTC")
+      str
+      (subs 0 4)))
+
+
+
 (comment
-  
+  (which-year (System/currentTimeMillis))
+  (which-month (System/currentTimeMillis))
   (start-of-month (System/currentTimeMillis))
   (start-of-year (System/currentTimeMillis)))

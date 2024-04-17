@@ -3,6 +3,7 @@
     [tg-bot-api.telegram :as telegram]
     [clojure.string :as str]
     [finbot.sql :as sql]
+    [finbot.time :as time]
     [hashids.core :as hashids]))
 
 
@@ -87,6 +88,10 @@
               (reduce
                 (fn [x y] (format "%s %s" x y))
                 (rest words))
+
+              category
+              (sql/get-category ds {:agent agent
+                                    :chat-id (-> message :chat :id)})
               
               amount
               (if 
@@ -133,13 +138,23 @@
           (telegram/send-message
             config
             (-> message :chat :id)
-            (format "%s ₽: %s\n\n%,d ₽ с начала месяца,\n%,d ₽ из них — %s" 
+            (format
+              "%s ₽: %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s"
               amount
               agent
-              (long 
+
+              (long
 	              (sql/gross-of-month ds
 	                {:chat-id (-> message :chat :id)
 	                 :timestamp timestamp}))
+              (time/which-month timestamp)
+              (long
+                (-
+                  (sql/gross-of-month-by-category ds
+                    {:chat-id (-> message :chat :id)
+                     :timestamp timestamp
+                     :category category})))
+              category
               (long 
 	              (-
 	                (sql/gross-of-month-by-agent ds
@@ -147,7 +162,26 @@
 	                   :timestamp timestamp
 	                   :agent agent})))
               agent
-              nil)
+
+             (long
+                (sql/gross-of-year ds
+                  {:chat-id (-> message :chat :id)
+                   :timestamp timestamp}))
+              (time/which-year timestamp)
+              (long
+                (-
+                 (sql/gross-of-year-by-category ds
+                  {:chat-id (-> message :chat :id)
+                   :timestamp timestamp
+                   :category category})))
+              category
+              (long
+                (-
+                  (sql/gross-of-year-by-agent ds
+                    {:chat-id (-> message :chat :id)
+                     :timestamp timestamp
+                     :agent agent})))
+              agent)
             {:reply-markup
              {:inline_keyboard
               (inline-keyboard message)}}))
