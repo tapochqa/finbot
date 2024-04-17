@@ -118,8 +118,14 @@
      chat-id]))
 
 
-(defn gross-of-month
-  [ds {:keys [chat-id timestamp]}]
+;;
+;; gross
+;;
+
+
+
+(defn gross-of
+  [ds {:keys [chat-id timestamp]} fn]
   (->
     (jdbc/execute! ds
       ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
@@ -129,12 +135,27 @@
         AND (`active`) = 1
         "
        chat-id
-       (time/start-of-month timestamp)])
+       ])
     first first second))
 
 
-(defn gross-of-month-by-agent
-  [ds {:keys [chat-id agent timestamp]}]
+(defn gross-of-month
+  [ds {:keys [chat-id timestamp] :as params}]
+  (gross-of ds params (time/start-of-month timestamp)))
+
+
+(defn gross-of-year
+  [ds {:keys [chat-id timestamp] :as params}]
+  (gross-of ds params (time/start-of-year timestamp)))
+
+
+;;
+;; agent
+;;
+
+
+(defn gross-of-by-agent
+  [ds {:keys [chat-id agent timestamp]} fn]
   (->
     (jdbc/execute! ds
       ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
@@ -144,14 +165,29 @@
         AND (`amount`) < 0
         AND (`active`) = 1"
        chat-id
-       (time/start-of-month timestamp)
+       fn
        agent])
     first first second))
 
 
-(defn gross-of-month-by-category
-  [ds {:keys [chat-id category timestamp]}]
-  (->
+(defn gross-of-month-by-agent
+  [ds {:keys [chat-id agent timestamp] :as params}]
+  (gross-of-by-agent ds params (time/start-of-month timestamp)))
+
+
+(defn gross-of-year-by-agent
+  [ds {:keys [chat-id agent timestamp] :as params}]
+  (gross-of-by-agent ds params (time/start-of-year timestamp)))
+
+
+;;
+;; category
+;;
+
+
+(defn gross-of-by-category
+  [ds {:keys [chat-id category timestamp]} fn]
+  (->>
     (jdbc/execute! ds
       ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
         WHERE (`chat_id`) = ?
@@ -160,13 +196,29 @@
         AND (`amount`) < 0
         AND (`active`) = 1"
        chat-id
-       (time/start-of-month timestamp)
-       agent])
+       fn
+       category])
     first first second))
 
 
-(defn gross-of-month-by-range
-  [ds {:keys [chat-id agent min-amount max-amount timestamp]}]
+(defn gross-of-month-by-category
+  [ds {:keys [chat-id category timestamp] :as params}]
+   (gross-of-by-category ds params (time/start-of-month timestamp)))
+
+
+(defn gross-of-year-by-category
+  [ds {:keys [chat-id category timestamp] :as params}]
+  (gross-of-by-category ds params (time/start-of-year timestamp)))
+
+
+;;
+;; agent + range
+;;
+
+
+
+(defn gross-of-by-range
+  [ds {:keys [chat-id agent min-amount max-amount timestamp]} fn]
   (some->
     (jdbc/execute! ds
       ["SELECT COUNT(*) FROM `telegram`.`finbot`
@@ -180,7 +232,7 @@
        agent
        min-amount
        max-amount
-       (time/start-of-month timestamp)])
+       fn])
     first 
     first 
     second
@@ -188,6 +240,21 @@
 
 
   )
+
+
+(defn gross-of-month-by-range
+  [ds {:keys [chat-id agent min-amount max-amount timestamp] :as params}]
+   (gross-of-by-range ds params (time/start-of-month timestamp)))
+
+
+(defn gross-of-year-by-range
+  [ds {:keys [chat-id agent min-amount max-amount timestamp] :as params}]
+   (gross-of-by-range ds params (time/start-of-year timestamp)))
+
+
+;;
+;;
+;;
 
 
 (defn top-4
@@ -233,7 +300,8 @@
 (comment 
   
   
-  (get-category FDS "магнит")
+  (get-category FDS {:agent "пятерочка"
+                     :chat-id 163440129})
   
   (deactivate-duplicates FDS)
   
@@ -255,11 +323,16 @@
   
   (into [[1 2][3 4]][[5]])
 
-  
+  (gross-of-year-by-agent
+    FDS
+    {:chat-id 163440129
+     :agent "перекресток"
+     :timestamp (System/currentTimeMillis)}
+    )
   
   
   (do
-   (gross-of-month-by-range
+   (gross-of-year-by-range
     FDS
     {:chat-id 163440129
      :agent "автобус"
@@ -270,7 +343,7 @@
   (gross-of-month FDS 
     {:chat-id 163440129
      :timestamp 0})
-  (gross-of-month-by-agent FDS 
+  (gross-of-month-by-category FDS
     {:chat-id 163440129
      :agent "Пятерочка"}
     )
