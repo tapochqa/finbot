@@ -68,7 +68,7 @@ deploy-version:
 		--runtime bash \
 		--entrypoint handler.sh \
 		--memory 128m \
-		--execution-timeout 3s \
+		--execution-timeout 6s \
 		--environment TELEGRAM_BOT_TOKEN=$(token) \
 		--environment CREDS=$(creds) \
 		--package-bucket-name lmnd \
