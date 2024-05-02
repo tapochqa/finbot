@@ -125,15 +125,16 @@
 
 
 (defn gross-of
-  [ds {:keys [chat-id timestamp]} fn]
+  [ds {:keys [chat-id timestamp sign] :or {sign "<"}} fn]
   (->
     (jdbc/execute! ds
-      ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
-        WHERE (`chat_id`) = ?
-        AND (`timestamp`) > ?
-        AND (`amount`) < 0
-        AND (`active`) = 1
-        "
+      [(format
+          "SELECT SUM(`amount`) FROM `telegram`.`finbot`
+          WHERE (`chat_id`) = ?
+          AND (`timestamp`) > ?
+          AND (`amount`) %s 0
+          AND (`active`) = 1
+          " sign)
        chat-id
        fn])
     first first second))
@@ -155,15 +156,16 @@
 
 
 (defn gross-of-by-agent
-  [ds {:keys [chat-id agent timestamp]} fn]
+  [ds {:keys [chat-id agent timestamp sign] :or {sign "<"}} fn]
   (->
     (jdbc/execute! ds
-      ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
+      [(format
+       "SELECT SUM(`amount`) FROM `telegram`.`finbot`
         WHERE (`chat_id`) = ?
         AND (`timestamp`) > ?
         AND (`agent`) = ?
-        AND (`amount`) < 0
-        AND (`active`) = 1"
+        AND (`amount`) %s 0
+        AND (`active`) = 1" sign)
        chat-id
        fn
        agent])
@@ -186,15 +188,16 @@
 
 
 (defn gross-of-by-category
-  [ds {:keys [chat-id category timestamp]} fn]
+  [ds {:keys [chat-id category timestamp sign] :or {sign "<"}} fn]
   (->>
     (jdbc/execute! ds
-      ["SELECT SUM(`amount`) FROM `telegram`.`finbot`
+      [(format
+       "SELECT SUM(`amount`) FROM `telegram`.`finbot`
         WHERE (`chat_id`) = ?
         AND (`timestamp`) > ?
         AND (`category`) = ?
-        AND (`amount`) < 0
-        AND (`active`) = 1"
+        AND (`amount`) %s 0
+        AND (`active`) = 1" sign)
        chat-id
        fn
        category])
@@ -299,6 +302,18 @@
 
 (comment 
   
+  (jdbc/execute! FDS
+      [(format
+         "SELECT SUM(`amount`) FROM `telegram`.`finbot`
+          WHERE (`chat_id`) = ?
+          AND (`timestamp`) > ?
+          AND (`agent`) = ?
+          AND (`amount`) %s 0
+          AND (`active`) = 1" "<")
+       163440129
+       0
+       "пятерочка"])
+  
   
   (get-category FDS {:agent "пятерочка"
                      :chat-id 163440129})
@@ -308,6 +323,7 @@
   
   (def CONFIG {:creds (slurp "creds")
                :token (slurp "token")})
+  
   (def 
     FDS
     (jdbc-mysql CONFIG))
@@ -325,8 +341,9 @@
 
   (gross-of-year-by-agent
     FDS
-    {:chat-id 163440129
-     :agent "перекресток"
+    {:sign ">"
+     :chat-id 163440129
+     :agent ""
      :timestamp (System/currentTimeMillis)}
     )
   

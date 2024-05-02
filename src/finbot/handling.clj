@@ -50,6 +50,69 @@
      {:keyboard (keyboard config ds message)}}))
 
 
+(defn reply
+  [ds config message {:keys [amount agent category timestamp sign] :or {sign "<"}}]
+  (let [polarity (case sign 
+                   "<" - 
+                   ">" +)]
+    (telegram/send-message
+              config
+              (-> message :chat :id)
+              (format
+                "%s ₽: %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s"
+                amount
+                agent
+
+                (long
+                  (sql/gross-of-month ds
+                    {:chat-id (-> message :chat :id)
+                     :timestamp timestamp
+                     :sign sign}))
+                (time/which-month timestamp)
+                (long
+                  (polarity
+                    (sql/gross-of-month-by-category ds
+                      {:chat-id (-> message :chat :id)
+                       :timestamp timestamp
+                       :category category
+                       :sign sign})))
+                category
+                (long 
+                  (polarity
+                    (sql/gross-of-month-by-agent ds
+                      {:chat-id (-> message :chat :id)
+                       :timestamp timestamp
+                       :agent agent
+                       :sign sign})))
+                agent
+
+               (long
+                  (sql/gross-of-year ds
+                    {:chat-id (-> message :chat :id)
+                     :timestamp timestamp
+                     :sign sign}))
+                (time/which-year timestamp)
+                (long
+                  (polarity
+                   (sql/gross-of-year-by-category ds
+                    {:chat-id (-> message :chat :id)
+                     :timestamp timestamp
+                     :category category
+                     :sign sign})))
+                category
+                (long
+                  (polarity
+                    (sql/gross-of-year-by-agent ds
+                      {:chat-id (-> message :chat :id)
+                       :timestamp timestamp
+                       :agent agent
+                       :sign sign})))
+                agent)
+              {:reply-markup
+               {:inline_keyboard
+                (inline-keyboard message)}})))
+
+
 (defn the-handler 
   "Bot logic here"
   [config {:keys [message callback_query]} trigger-id]
@@ -135,68 +198,20 @@
         
         (when
           (< amount 0)
-          (telegram/send-message
-            config
-            (-> message :chat :id)
-            (format
-              "%s ₽: %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s\n\n%,d ₽ в %s\n%,d ₽  — %s\n%,d ₽  — %s"
-              amount
-              agent
+          (reply ds config message {:amount amount
+                                    :agent agent
+                                    :category category
+                                    :timestamp timestamp
+                                    :sign "<"}))
 
-              (long
-	              (sql/gross-of-month ds
-	                {:chat-id (-> message :chat :id)
-	                 :timestamp timestamp}))
-              (time/which-month timestamp)
-              (long
-                (-
-                  (sql/gross-of-month-by-category ds
-                    {:chat-id (-> message :chat :id)
-                     :timestamp timestamp
-                     :category category})))
-              category
-              (long 
-	              (-
-	                (sql/gross-of-month-by-agent ds
-	                  {:chat-id (-> message :chat :id)
-	                   :timestamp timestamp
-	                   :agent agent})))
-              agent
-
-             (long
-                (sql/gross-of-year ds
-                  {:chat-id (-> message :chat :id)
-                   :timestamp timestamp}))
-              (time/which-year timestamp)
-              (long
-                (-
-                 (sql/gross-of-year-by-category ds
-                  {:chat-id (-> message :chat :id)
-                   :timestamp timestamp
-                   :category category})))
-              category
-              (long
-                (-
-                  (sql/gross-of-year-by-agent ds
-                    {:chat-id (-> message :chat :id)
-                     :timestamp timestamp
-                     :agent agent})))
-              agent)
-            {:reply-markup
-             {:inline_keyboard
-              (inline-keyboard message)}}))
-
-          (when 
-            (> amount 0)
-            (telegram/send-message
-              config
-              (-> message :chat :id)
-              (format "+ %s ₽: %s"
-                amount
-                agent)
-              {:reply-markup
-               {:inline_keyboard
-                (inline-keyboard message)}})))
+        (when 
+          (> amount 0)
+          (reply ds config message {:amount amount
+                                    :agent agent
+                                    :category category
+                                    :timestamp timestamp
+                                    :sign ">"})
+            ))
       
       
       (re-matches (:category REGEXPS)
