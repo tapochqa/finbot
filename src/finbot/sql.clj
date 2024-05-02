@@ -327,6 +327,18 @@
   (def 
     FDS
     (jdbc-mysql CONFIG))
+
+  (-
+    (gross-of-month-by-category FDS
+    {:chat-id 914628712
+     :timestamp (time/start-of-month (System/currentTimeMillis))
+     :category nil}))
+
+
+  (get-category FDS 
+    {:agent "1249213"
+     :chat-id 914628712})
+
   
   (->>
     (top-4 FDS {:chat-id 5362409023})

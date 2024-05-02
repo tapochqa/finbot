@@ -152,25 +152,28 @@
                 (fn [x y] (format "%s %s" x y))
                 (rest words))
 
-              category
-              (sql/get-category ds {:agent agent
-                                    :chat-id (-> message :chat :id)})
-              
               amount
               (if 
                 (= (first amount) \+)
                 (parse-double amount)
-                (- (parse-double amount)))]
-        
-        (sql/deactivate-duplicates ds)
+                (- (parse-double amount)))
 
-        (sql/insert-row! ds config
-          {:chat-id (-> message :chat :id)
-           :message-id (:message_id message)
-           :timestamp timestamp 
-           :agent agent
-           :amount amount})
-        
+              response
+              (sql/deactivate-duplicates ds)
+
+              response
+              (sql/insert-row! ds config
+                {:chat-id (-> message :chat :id)
+                 :message-id (:message_id message)
+                 :timestamp timestamp 
+                 :agent agent
+                 :amount amount})
+
+              category
+              (sql/get-category ds {:agent agent
+                                    :chat-id (-> message :chat :id)})
+              
+              ]
         
         (ok config ds message)
           
