@@ -152,6 +152,9 @@
                 (fn [x y] (format "%s %s" x y))
                 (rest words))
 
+              agent
+              (str/lower-case agent)
+
               amount
               (if 
                 (= (first amount) \+)
@@ -225,9 +228,17 @@
             
             agent
             (second match)
+
+            agent
+            (str/lower-case agent)
             
             category
-            (nth match 2)]
+            (nth match 2)
+
+            category
+            (str/lower-case category)
+
+            ]
         
         (sql/set-category! ds {:agent agent 
                                :category category
