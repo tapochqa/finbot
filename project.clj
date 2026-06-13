@@ -1,4 +1,4 @@
-(defproject finbot "0.1.0-SNAPSHOT"
+(defproject finbot "0.2.0"
 
   :description
   "Telegram Bot"
