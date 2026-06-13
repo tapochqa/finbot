@@ -1,4 +1,4 @@
-(defproject finbot "0.1.0-SNAPSHOT"
+(defproject finbot "0.2.0"
 
   :description
   "Telegram Bot"
@@ -21,7 +21,7 @@
     "5.10.0"]
    
    [link.lmnd/tg-bot-api 
-    "0.1.1"]
+    "0.1.9"]
    
    [seancorfield/next.jdbc 
     "1.0.409"]

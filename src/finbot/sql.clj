@@ -1,8 +1,10 @@
 (ns finbot.sql
   (:require 
     [finbot.time :as time]
+    [finbot.recovery :as recovery]
     
     [next.jdbc :as jdbc]
+    [next.jdbc.sql :as jdbc.sql]
     [hashids.core :as hashids]
     
     [clojure.string :as str]))
@@ -299,6 +301,16 @@
       " 0]))
 
 
+(defn recover!
+  [ds rows]
+  
+  (jdbc.sql/insert-multi! ds 
+    "telegram.finbot"
+    [:timestamp :chat_id :chat_id_hash :message_id :agent :category :amount :active]
+    (mapv (juxt 
+     :timestamp :chat_id :chat_id_hash :message_id :agent :category :amount :active) rows)))
+
+
 
 (comment 
   
@@ -320,6 +332,7 @@
   
   (deactivate-duplicates FDS)
   
+
   
   (def CONFIG {:creds (slurp "creds")
                :token (slurp "token")})

@@ -3,6 +3,8 @@
   (:require
     [finbot.polling  :as polling]
     [finbot.lambda   :as lambda]
+    [finbot.config   :as config]
+
     [clojure.string    :as str]
     [cheshire.core     :as json]))
 
@@ -18,13 +20,9 @@
   [my-token creds]
   
   (let [config 
-        { :test-server false
-          :token my-token
-          :polling {:update-timeout 1000}
-          :creds creds
-          }]
-  #_(polling/run-polling config)
-  (lambda config)))
+        (config/make-config my-token creds "http://95.215.8.235")]
+  (polling/run-polling config)
+  #_(lambda config)))
 
 
 (comment
