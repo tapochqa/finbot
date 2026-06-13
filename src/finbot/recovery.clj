@@ -3,7 +3,6 @@
    [clojure.spec.alpha :as spec]
    [clojure.string :as str]
    
-   [finbot.sql :as sql]
    [finbot.config :as config]
    
    [cheshire.core :as json]

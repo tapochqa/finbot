@@ -22,7 +22,7 @@
   [my-token creds]
   
   (let [config 
-        (config/make-config my-token creds "")]
+        (config/make-config my-token creds :local-server "")]
   (polling/run-polling config)
   #_(lambda config)))
 
