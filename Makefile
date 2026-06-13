@@ -79,4 +79,7 @@ deploy: upload-version deploy-version
 set-webhook:
 	curl 'https://api.telegram.org/bot$(token)/setWebhook?url=https://functions.yandexcloud.net/$(id)'
 
+delete-webhook:
+	curl 'https://api.telegram.org/bot$(token)/deleteWebhook'
+
 all: bash-package deploy

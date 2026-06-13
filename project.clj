@@ -21,7 +21,7 @@
     "5.10.0"]
    
    [link.lmnd/tg-bot-api 
-    "0.1.1"]
+    "0.1.9"]
    
    [seancorfield/next.jdbc 
     "1.0.409"]
@@ -51,4 +51,4 @@
 
    :uberjar
    {:aot :all
-    :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+    :jvm-opts ["-Dclojure.compiler.direct-linking=true" "-DsocksProxyHost=127.0.0.1" "-DsocksProxyPort=10829"]}})

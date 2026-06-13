@@ -36,7 +36,7 @@
        :web_app {:url (format 
                         "https://datalens.yandex/4anikzd90wr2t?chat_id_hash=%s"
                         (hashids/encode
-                          {:salt (:creds config)}
+                          {:salt (:salt config)}
                           (-> message :chat :id)))}}]]))
 
 
@@ -263,7 +263,6 @@
 
 
 (comment
-  
   (format "%,d" (long 12454))
           
   
@@ -273,7 +272,7 @@
   (re-matches #"\+?([-.0-9]+) ([^\n]+)" "+100")
   (long 1.23)
   (hashids/encode
-    {:salt (slurp "creds")}
+    {:salt (slurp "salt")}
     475396835)
   (parse-double "+150")
   (reduce str (rest (str/split "+150 варя шалина" #" ")))

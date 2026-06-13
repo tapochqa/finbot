@@ -44,7 +44,7 @@
             (or (some-> updates peek :update_id inc)
                 offset)]
 
-        (println (format
+        #_(println (format
                    "Got %s updates, next offset: %s, updates: %s"
                    (count updates)
                    new-offset
