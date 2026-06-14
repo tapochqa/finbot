@@ -84,7 +84,7 @@
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
               chat-id
               (hashids/encode
-                {:salt (:creds config)}
+                {:salt (:salt config)}
                 chat-id)
               message-id
               timestamp

@@ -6,7 +6,9 @@
     [finbot.config   :as config]
 
     [clojure.string    :as str]
-    [cheshire.core     :as json]))
+    [cheshire.core     :as json]
+    [org.httpkit.client :as http]
+   ))
 
 
 (defn lambda
@@ -20,13 +22,19 @@
   [my-token creds]
   
   (let [config 
-        (config/make-config my-token creds "http://95.215.8.235")]
+        (config/make-config my-token creds :local-server "")]
   (polling/run-polling config)
   #_(lambda config)))
 
 
 (comment
   
+  (defn test-telegram []
+  (println "Testing Telegram API through proxy...")
+  @(http/get "http://api.telegram.org/botYOUR_TOKEN/getMe"
+     {:proxy {:host "127.0.0.1" :port 10829 :type :socks5}
+      :timeout 30000}))
+  (test-telegram)
    (binding [*in* (-> "yc-request.json"
                  clojure.java.io/resource
                  clojure.java.io/reader)]
@@ -34,6 +42,6 @@
      (-main (slurp "token") (slurp "creds")))
   
   
-  (-main "...:...")
+  (-main "...:..." 23)
   
   )

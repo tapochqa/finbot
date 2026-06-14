@@ -51,4 +51,4 @@
 
    :uberjar
    {:aot :all
-    :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+    :jvm-opts ["-Dclojure.compiler.direct-linking=true" "-DsocksProxyHost=127.0.0.1" "-DsocksProxyPort=10829"]}})

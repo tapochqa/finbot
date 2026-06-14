@@ -3,7 +3,7 @@
 
 
 (defn make-config
-  [token creds & local-server]
+  [token creds & {:keys [local-server]}]
   { :test-server false
     :local-server local-server
     :token token
