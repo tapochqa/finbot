@@ -3,7 +3,6 @@
    [clojure.spec.alpha :as spec]
    [clojure.string :as str]
    
-   [finbot.sql :as sql]
    [finbot.config :as config]
    
    [cheshire.core :as json]
@@ -36,7 +35,7 @@
 (spec/def ::reply-text->
   (let [->groups
         (fn [x] (->> x
-                  (re-seq #"(?Um)^([\d.,]+)\s*₽\s*[:—-]\s*([^\r\n]+)$")
+                  (re-seq #"(?Um)^(-?[\d.,]+)\s*₽\s*[:—-]\s*([^\r\n]+)$")
                   (map rest)
                   flatten
                   (take 4)
@@ -85,21 +84,24 @@
     (->> dialog
       (map (fn [x] (spec/conform ::messages x)))
       (filter map?)
-      (map (fn [{:keys [date_unixtime] :as x}] 
-             (-> x (select-keys [:text :date_unixtime])
+      (map (fn [{:keys [date_unixtime id] :as x}] 
+             (-> x (select-keys [:text :date_unixtime :id])
                (assoc 
-                    :amount        (get-in x [:text :sum])
+                  :amount        (get-in x [:text :sum])
             	    :agent         (get-in x [:text :agent])
-            	    :category      (get-in x [:text :agent])
+            	    :category      (get-in x [:text :category])
             	    :chat_id       chat_id
             	    :chat_id_hash  chat_id_hash
+                  :message_id    (- id)
                     :timestamp     date_unixtime
                     :active 1
             	    )
                (dissoc :text :date_unixtime)))))))
 
   
-  
+  (comment
+    (filter (fn [{:keys [timestamp]}] (> timestamp 1758925026169))
+      (map-tg-export "resources/finbot.json" {:chat_id 163440129 :chat_id_hash "aboba"})))
 
 
 

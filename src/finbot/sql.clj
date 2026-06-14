@@ -332,7 +332,9 @@
   
   (deactivate-duplicates FDS)
   
-
+  (recover! FDS 
+    (filter (fn [{:keys [timestamp]}] (> timestamp 1758925026169))
+      (recovery/map-tg-export "resources/finbot.json" {:chat_id 163440129 :chat_id_hash "aboba"})))
   
   (def CONFIG {:creds (slurp "creds")
                :token (slurp "token")})
