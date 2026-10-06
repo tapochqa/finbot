@@ -43,6 +43,19 @@
     :finbot/category))
 
 
+(defn get-category-by-message
+  [ds {:keys [message_id] :as message}]
+  (->
+    (jdbc/execute-one! ds
+      ["SELECT category FROM telegram.finbot
+        WHERE (chat_id=?
+               AND 
+               message_id=?)" 
+       (-> message :chat :id)
+       message_id])
+    :finbot/category))
+
+
 (defn set-category!
   "Populate all agent's records with category"
   [ds {:keys [chat-id

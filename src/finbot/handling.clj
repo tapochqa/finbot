@@ -15,10 +15,22 @@
    #"(.*) [-—] (.*)"})
 
 
+(defn chat-id
+  [message]
+  (-> message :chat :id))
+
+
 (defn inline-keyboard
-  [{message-id :message_id}]
+  [config ds {message-id :message_id :as message}]
   [[{:text "⨯"
-     :callback_data message-id}]])
+     :callback_data message-id}
+    {:text "Динамика"
+     :web_app {:url (format
+                      "https://datalens.yandex/hmdr5obmwufo0?chat_id_hash=%s&category=%s"
+                      (hashids/encode
+                          {:salt (:salt config)}
+                          (chat-id message))
+                      (sql/get-category-by-message ds message))}}]])
 
 
 (defn keyboard
@@ -110,7 +122,7 @@
                 agent)
               {:reply-markup
                {:inline_keyboard
-                (inline-keyboard message)}})))
+                (inline-keyboard config ds message)}})))
 
 
 (defn the-handler 
@@ -196,7 +208,7 @@
 		  			 :timestamp timestamp}))
 		  	{:reply-markup
              {:inline_keyboard
-              (inline-keyboard message)}}
+              (inline-keyboard config ds message)}}
 		  	))
         
         
